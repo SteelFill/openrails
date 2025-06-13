@@ -433,6 +433,64 @@ namespace Orts.Viewer3D.RollingStock
                 car.BogiePivotHeightM = tempHeight / (car.Parts.Count - 1);
             }
 
+            // Initialization step for front animated coupler shape attachment
+            if (car.FrontCouplerShapeIndex != -1)
+            {
+                if (car.FrontCouplerShapeIndex < 0 || car.FrontCouplerShapeIndex >= TrainCarShape.ResultMatrices.Count())
+                {
+                    Trace.TraceWarning("Front animated coupler in car {0} has invalid shape index defined, shape index {1} does not exist",
+                        (Car as MSTSWagon).WagFilePath, car.FrontCouplerShapeIndex);
+                    car.FrontCouplerShapeIndex = 0;
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(car.FrontCouplerShapeHierarchy))
+                {
+                    if (TrainCarShape.SharedShape.MatrixNames.Contains(car.FrontCouplerShapeHierarchy))
+                    {
+                        car.FrontCouplerShapeIndex = TrainCarShape.SharedShape.MatrixNames.IndexOf(car.FrontCouplerShapeHierarchy);
+                    }
+                    else
+                    {
+                        Trace.TraceWarning("Front animated coupler in car {0} has invalid shape index defined, matrix name {1} does not exist",
+                            (Car as MSTSWagon).WagFilePath, car.FrontCouplerShapeHierarchy);
+                        car.FrontCouplerShapeIndex = 0;
+                    }
+                }
+                else
+                    car.FrontCouplerShapeIndex = 0;
+            }
+
+            // Initialization step for rear animated coupler shape attachment
+            if (car.RearCouplerShapeIndex != -1)
+            {
+                if (car.RearCouplerShapeIndex < 0 || car.RearCouplerShapeIndex >= TrainCarShape.ResultMatrices.Count())
+                {
+                    Trace.TraceWarning("Rear animated coupler in car {0} has invalid shape index defined, shape index {1} does not exist",
+                        (Car as MSTSWagon).WagFilePath, car.RearCouplerShapeIndex);
+                    car.RearCouplerShapeIndex = 0;
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(car.RearCouplerShapeHierarchy))
+                {
+                    if (TrainCarShape.SharedShape.MatrixNames.Contains(car.RearCouplerShapeHierarchy))
+                    {
+                        car.RearCouplerShapeIndex = TrainCarShape.SharedShape.MatrixNames.IndexOf(car.RearCouplerShapeHierarchy);
+                    }
+                    else
+                    {
+                        Trace.TraceWarning("Rear animated coupler in car {0} has invalid shape index defined, matrix name {1} does not exist",
+                            (Car as MSTSWagon).WagFilePath, car.RearCouplerShapeHierarchy);
+                        car.RearCouplerShapeIndex = 0;
+                    }
+                }
+                else
+                    car.RearCouplerShapeIndex = 0;
+            }
+
             // Initialization step for viewpoint shape attachment
             var allViews = car.HeadOutViewpoints.Concat(car.PassengerViewpoints.Cast<ViewPoint>()).Concat(car.CabViewpoints.Cast<ViewPoint>());
             foreach (ViewPoint view in allViews)

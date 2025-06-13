@@ -2239,6 +2239,12 @@ separate model for the coupled and uncoupled state is suggested.
 To enable coupler animation the following parameters need to be included in the coupler 
 code section of the WAG file:
 
+.. index::
+   single: FrontCouplerAnim
+   single: FrontCouplerOpenAnim
+   single: RearCouplerAnim
+   single: RearCouplerOpenAnim
+
 ``FrontCouplerAnim`` - Coupler shape to be displayed at the front of the car when it is coupled.
 ``FrontCouplerOpenAnim`` - Coupler shape to be displayed at the front of the car when it is uncoupled.
 ``RearCouplerAnim`` - Coupler shape to be displayed at the rear of the car when it is coupled.
@@ -2246,11 +2252,23 @@ code section of the WAG file:
 
 All four of the above will have the following format:
 
-CouplerAnimation ( couplershape.s, x, y, z ) where the coupler shape file name is included along with 
-x, y, z values that offset the coupler in the three axis.
+``CouplerAnimation ( couplershape.s, x, y, z )`` where the coupler shape file name is included along with 
+x, y, z values that offset the coupler in the width, height, and length axis respectively (default units
+are meters, other units of length are accepted).
+
+Optionally, the parameters can be modified with a custom shape descriptor file in order to modify
+the shape using :ref:`shape descriptor overrides <features-shape-manipulation>` by adding the path
+to the .sd file after the standard arguments, such as ``CouplerAnimation ( couplershape.s, x, y, z 
+couplershape.sd )``.
 
 For the airhose animation the following parameters must be included in the coupler code section of 
 the WAG file:
+
+.. index::
+   single: FrontAirHoseAnim
+   single: FrontAirHoseDisconnectedAnim
+   single: RearAirHoseAnim
+   single: RearAirHoseDisconnectedAnim
 
 ``FrontAirHoseAnim`` - Air hose shape to be displayed at the front of the car when it is coupled.
 ``FrontAirHoseDisconnectedAnim`` - Air hose shape to be displayed at the front of the car when it is uncoupled.
@@ -2259,10 +2277,35 @@ the WAG file:
 
 Each of these parameters will have the same format as indicated above for the coupler shapes.
 
+.. index::
+   single: FrontCouplerFlip
+   single: RearCouplerFlip
+
+Note that the orientation of the specified coupler/air hose shape file is the same whether applied to the
+front or rear of the car. Normally, this would require a different (either rotated or entirely unqiue)
+shape file for the front and rear couplers/air hoses, but if it is desired to use the same coupler
+and air hose shape on the front and rear, the parameters ``FrontCouplerFlip ()`` or ``RearCouplerFlip()``
+can be used to flip the 3D model of the front or rear coupler and air hose respectively. Which
+parameter is appropriate will depend on the specific 3D model used, experiment with each until the
+correct coupler orientation is produced.
+
 Open rails uses some defaults to calculate the required movement and angles for coupler and air hose 
 shape movement, however for greater accuracy the modeler can add specific values such as 
 ``ORTSLengthAirHose``. In addition the length values suggested in the Derailment Coefficient should 
 also be added.
+
+.. index::
+   single: FrontCouplerShapeHierarchy
+   single: RearCouplerShapeHierarchy
+
+By default, the couplers and hoses will be positioned relative to the main body of the train car.
+However, for more complex rolling stock it may be better to attach the couplers to a different
+sub object of the train car model. ``FrontCouplerShapeHierarchy ( MATRIXNAME )`` and
+``RearCouplerShapeHierarchy ( MATRIXNAME )`` respectively attach the front and rear couplers + air
+hoses to the sub object of the main shape named "MATRIXNAME". Names of sub objects can be determined
+using shape viewing utilities. The front and rear couplers can be attached to entirely different
+objects, if desired. If the specified name can't be found in the main shape file, a warning will
+be added to the log and the couplers/hoses will attach to the main shape object, as is the default case.
 
 .. _features-passenger-doors:
 

@@ -238,6 +238,12 @@ namespace Orts.Simulation.RollingStocks
         public float CarAirHoseLengthM;
         public float CarAirHoseHorizontalLengthM;
 
+        public int FrontCouplerShapeIndex = -1;
+        public string FrontCouplerShapeHierarchy;
+
+        public int RearCouplerShapeIndex = -1;
+        public string RearCouplerShapeHierarchy;
+
         // Used to calculate Carriage Steam Heat Loss
         public const float BogieHeightM = 1.06f; // Height reduced by 1.06m to allow for bogies, etc
         public const float CarCouplingPipeM = 1.2f;  // Allow for connection between cars (assume 2' each end) - no heat is contributed to carriages.

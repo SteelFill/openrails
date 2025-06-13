@@ -1652,6 +1652,16 @@ namespace Orts.Simulation.RollingStocks
                         FrontAirHose.Connected.ShapeDescriptor = FrontAirHose.Connected.ShapeFileName + "d";
                     break;
 
+                case "wagon(coupling(frontcouplershapehierarchy": FrontCouplerShapeHierarchy = stf.ReadStringBlock(null); break;
+
+                case "wagon(coupling(frontcouplershapeindex": FrontCouplerShapeIndex = stf.ReadInt(null); break;
+
+                case "wagon(coupling(frontcouplerflip":
+                    bool frontFlip = stf.ReadBoolBlock(true);
+                    FrontCoupler.Flipped = frontFlip;
+                    FrontAirHose.Flipped = frontFlip;
+                    break;
+
                 case "wagon(coupling(rearcoupleranim":
                     stf.MustMatch("(");
                     RearCoupler.Closed.ShapeFileName = stf.ReadString();
@@ -1676,6 +1686,16 @@ namespace Orts.Simulation.RollingStocks
                     }
                     else
                         RearAirHose.Connected.ShapeDescriptor = RearAirHose.Connected.ShapeFileName + "d";
+                    break;
+
+                case "wagon(coupling(rearcouplershapehierarchy": RearCouplerShapeHierarchy = stf.ReadStringBlock(null); break;
+
+                case "wagon(coupling(rearcouplershapeindex": RearCouplerShapeIndex = stf.ReadInt(null); break;
+
+                case "wagon(coupling(rearcouplerflip":
+                    bool rearFlip = stf.ReadBoolBlock(true);
+                    RearCoupler.Flipped = rearFlip;
+                    RearAirHose.Flipped = rearFlip;
                     break;
 
                 case "wagon(coupling(spring(ortstensionstiffness":

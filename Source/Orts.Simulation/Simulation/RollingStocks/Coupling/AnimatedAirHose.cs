@@ -27,6 +27,7 @@ namespace Orts.Simulation.RollingStocks.Coupling
         public float HeightAdjustmentM;
         public float YAngleAdjustmentRad;
         public float ZAngleAdjustmentRad;
+        public bool Flipped;
     }
 
     public struct AnimatedAirHoseState

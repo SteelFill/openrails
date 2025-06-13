@@ -25,6 +25,7 @@ namespace Orts.Simulation.RollingStocks.Coupling
         public AnimatedCouplerState Closed;
         public AnimatedCouplerState Open;
         public bool IsOpen;
+        public bool Flipped;
     }
 
     public struct AnimatedCouplerState
