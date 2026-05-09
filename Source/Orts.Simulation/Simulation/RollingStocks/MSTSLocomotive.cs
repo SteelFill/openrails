@@ -546,8 +546,6 @@ namespace Orts.Simulation.RollingStocks
             AFMFilter = new IIRFilter(IIRFilter.FilterTypes.Butterworth, 1, IIRFilter.HzToRad(0.1f), 1.0f);
 
             TrainBrakeController = new ScriptedBrakeController(this);
-            EngineBrakeController = new ScriptedBrakeController(this);
-            BrakemanBrakeController = new ScriptedBrakeController(this);
             MultiPositionControllers = new List<MultiPositionController>();
             ThrottleController = new MSTSNotchController();
             DynamicBrakeController = new MSTSNotchController();
@@ -1039,6 +1037,8 @@ namespace Orts.Simulation.RollingStocks
                 case "engine(ortstrainbrakecontroller":
                 case "engine(enginecontrollers(brake_train":
                 case "engine(ortstraindynamicblendingtable":
+                    if (TrainBrakeController == null)
+                        TrainBrakeController = new ScriptedBrakeController(this);
                     TrainBrakeController.Parse(lowercasetoken, stf);
                     TrainBrakeFitted = true;
                     break;
@@ -1053,10 +1053,14 @@ namespace Orts.Simulation.RollingStocks
                 case "engine(ortsenginebrakescontrollerslowapplicationrate":
                 case "engine(enginecontrollers(brake_engine":
                 case "engine(ortsenginebrakecontroller":
+                    if (EngineBrakeController == null)
+                        EngineBrakeController = new ScriptedBrakeController(this);
                     EngineBrakeController.Parse(lowercasetoken, stf);
                     EngineBrakeFitted = true;
                     break;
                 case "engine(enginecontrollers(brake_brakeman":
+                    if (BrakemanBrakeController == null)
+                        BrakemanBrakeController = new ScriptedBrakeController(this);
                     BrakemanBrakeController.Parse(lowercasetoken, stf);
                     BrakemanBrakeFitted = true;
                     break;
@@ -1377,7 +1381,7 @@ namespace Orts.Simulation.RollingStocks
 
             ThrottleController = (MSTSNotchController)locoCopy.ThrottleController.Clone();
             SteamHeatController = (MSTSNotchController)locoCopy.SteamHeatController.Clone();
-            TrainBrakeController = locoCopy.TrainBrakeController.Clone(this);
+            TrainBrakeController = locoCopy.TrainBrakeController != null ? locoCopy.TrainBrakeController.Clone(this) : null;
             EngineBrakeController = locoCopy.EngineBrakeController != null ? locoCopy.EngineBrakeController.Clone(this) : null;
             BrakemanBrakeController = locoCopy.BrakemanBrakeController != null ? locoCopy.BrakemanBrakeController.Clone(this) : null;
             DynamicBrakeController = locoCopy.DynamicBrakeController != null ? (MSTSNotchController)locoCopy.DynamicBrakeController.Clone() : null;
