@@ -1087,9 +1087,34 @@ namespace Orts.Simulation.RollingStocks.SubSystems.PowerSupplies
 
         public void Initialize(bool reinitialize)
         {
-            if (reinitialize && ThrottleRPMTab != null)
+            RPMRange = MaxRPM - IdleRPM;
+            MagnitudeRange = MaxMagnitude - InitialMagnitude;
+            ExhaustRange = MaxExhaust - InitialExhaust;
+            ExhaustSteadyColor.A = 10;
+            ExhaustDecelColor.A = 10;
+            TemperatureDegC = IdleTemperatureDegC;
+
+            // Do not attach a gearbox to engines that do not provide traction
+            if (GearBoxParams.IsInitialized && ProvidesTraction)
             {
-                RealRPM = ThrottleRPMTab[Locomotive.ThrottlePercent];
+                GearBox = new GearBox(this);
+                GearBox.Initialize();
+            }
+
+            if (reinitialize)
+            {
+                if (Locomotive.DieselPowerSupply.MainPowerSupplyOn)
+                {
+                    DemandedThrottlePercent = Locomotive.ThrottlePercent;
+                    DemandedDynamicsPercent = Locomotive.DynamicBrakePercent;
+                }
+                else
+                {
+                    DemandedThrottlePercent = 0f;
+                    DemandedDynamicsPercent = 0f;
+                }
+
+                RealRPM = GetTargetRPM(float.PositiveInfinity);
                 State = DieselEngineState.Running;
             }    
             else if (!Simulator.Settings.NoDieselEngineStart)
@@ -1097,18 +1122,6 @@ namespace Orts.Simulation.RollingStocks.SubSystems.PowerSupplies
                 RealRPM = IdleRPM;
                 RawRPM = RealRPM;
                 State = DieselEngineState.Running;
-            }
-            RPMRange = MaxRPM - IdleRPM;
-            MagnitudeRange = MaxMagnitude - InitialMagnitude;
-            ExhaustRange = MaxExhaust - InitialExhaust;
-            ExhaustSteadyColor.A = 10;
-            ExhaustDecelColor.A = 10;
-            TemperatureDegC = IdleTemperatureDegC;
-            // Do not attach a gearbox to engines that do not provide traction
-            if (GearBoxParams.IsInitialized && ProvidesTraction)
-            {
-                GearBox = new GearBox(this);
-                GearBox.Initialize();
             }
         }
 
