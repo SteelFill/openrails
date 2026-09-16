@@ -974,8 +974,7 @@ namespace Orts.Simulation.RollingStocks.SubSystems.PowerSupplies
         public virtual void Parse(STFReader stf)
         {
             stf.MustMatch("(");
-            bool end = false;
-            while (!end)
+            while (!stf.EndOfBlock())
             {
                 string lowercasetoken = stf.ReadItem().ToLower();
                 switch (lowercasetoken)
@@ -1023,7 +1022,6 @@ namespace Orts.Simulation.RollingStocks.SubSystems.PowerSupplies
                     case "opttemperature": OptimalTemperatureDegC = stf.ReadFloatBlock(STFReader.UNITS.Temperature, 95f); break;
                     case "idletemperature": IdleTemperatureDegC = stf.ReadFloatBlock(STFReader.UNITS.Temperature, 75f); break;
                     default:
-                        end = true;
                         break;
                 }
             }
