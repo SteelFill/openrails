@@ -232,7 +232,22 @@ namespace Orts.Parsers.Msts
                     STFException.TraceWarning(this, string.Format("Expected depth 0; got depth {0} at end of file (missing ')'?)", block_depth));
                 streamSTF.Close(); streamSTF = null;
                 if (includeReader != null)
+                {
+                    // Remember the line and file name where we found auto size in order to add the size manually later.
+                    if ((FoundAutoCenter || FoundAutoSize) && (string.IsNullOrEmpty(includeReader.AutoFileName) || includeReader.AutoLineNumber == -1))
+                    {
+                        AutoFileName = FileName;
+                        AutoLineNumber = LineNumber;
+                    }
+
+                    if (!string.IsNullOrEmpty(includeReader.AutoFileName))
+                        AutoFileName = includeReader.AutoFileName;
+
+                    if (includeReader.AutoLineNumber != -1)
+                        AutoLineNumber = includeReader.AutoLineNumber;
+
                     includeReader.Dispose();
+                }
                 itemBuilder.Length = 0;
                 itemBuilder.Capacity = 0;
             }
@@ -250,6 +265,11 @@ namespace Orts.Parsers.Msts
         /// <summary>SIMIS header read from the first line of the file being parsed
         /// </summary>
         public string SimisSignature { get; private set; }
+
+        public bool FoundAutoCenter = false;
+        public bool FoundAutoSize = false;
+        public string AutoFileName;
+        public int AutoLineNumber = -1;
         /// <summary>Property returning the last {item} read using ReadItem() prefixed with string describing the nested block hierachy.
         /// <para>The string returned is formatted 'rootnode(nestednode(childnode(previous_item'.</para>
         /// </summary>
@@ -439,6 +459,19 @@ namespace Orts.Parsers.Msts
                 if (eob) UpdateTreeAndStepBack(")");
                 if (includeReader.Eof)
                 {
+                    // Remember the line and file name where we found auto size in order to add the size manually later.
+                    if ((FoundAutoCenter || FoundAutoSize) && (string.IsNullOrEmpty(includeReader.AutoFileName) || includeReader.AutoLineNumber == -1))
+                    {
+                        AutoFileName = FileName;
+                        AutoLineNumber = LineNumber;
+                    }
+
+                    if (!string.IsNullOrEmpty(includeReader.AutoFileName))
+                        AutoFileName = includeReader.AutoFileName;
+
+                    if (includeReader.AutoLineNumber != -1)
+                        AutoLineNumber = includeReader.AutoLineNumber;
+
                     includeReader.Dispose();
                     includeReader = null;
                 }
@@ -1772,8 +1805,34 @@ namespace Orts.Parsers.Msts
             if (includeReader != null)
             {
                 string item = includeReader.ReadItem(skip_mode, string_mode);
+
+                if (item.ToLowerInvariant() == "ortsautosize")
+                {
+                    includeReader.FoundAutoSize = true;
+                }
+                if (item.ToLowerInvariant() == "ortsautocenter")
+                {
+                    includeReader.FoundAutoCenter = true;
+                }
+
                 UpdateTreeAndStepBack(item);
                 if ((!includeReader.Eof) || (item.Length > 0)) return item;
+
+                //Trace.WriteLine("Include reader is done with file " + includeReader.FileName);
+
+                // Remember the line and file name where we found auto size in order to add the size manually later.
+                if ((includeReader.FoundAutoCenter || includeReader.FoundAutoSize) && (string.IsNullOrEmpty(includeReader.AutoFileName) || includeReader.AutoLineNumber == -1))
+                {
+                    AutoFileName = FileName;
+                    AutoLineNumber = LineNumber;
+                }
+
+                if (!string.IsNullOrEmpty(includeReader.AutoFileName))
+                    AutoFileName = includeReader.AutoFileName;
+
+                if (includeReader.AutoLineNumber != -1)
+                    AutoLineNumber = includeReader.AutoLineNumber;
+
                 includeReader.Dispose();
                 includeReader = null;
             }

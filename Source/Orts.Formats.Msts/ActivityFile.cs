@@ -1374,6 +1374,13 @@ namespace Orts.Formats.Msts
             });
         }
 
+        public Wagon(string folder, string name, bool engine = false)
+        {
+            Name = name;
+            Folder = folder;
+            IsEngine = engine;
+        }
+
         public string GetName(uint uId, List<Wagon> wagonList) {
             foreach (var item in wagonList) {
                 var wagon = item as Wagon;

@@ -572,7 +572,7 @@ namespace Orts.Simulation.RollingStocks
                         if (Simulator.Settings.VerboseConfigurationMessages)
                         {
                             Trace.TraceInformation("Rolling stock {0} CoG z-value automatically calculated using ORTSAutoCenter.", shortPath);
-                            if (Math.Abs(InitialCentreOfGravityM.Z) < 0.0001f)
+                            if (Math.Abs(InitialCentreOfGravityM.Z) < 0.0005f)
                                 Trace.TraceInformation("Overall 3D model bounds calculated to be {0} to {1}. Shape is already centered, CoG offset reset to zero.\n",
                                     FormatStrings.FormatVeryShortDistanceDisplay(mainMins.Z, IsMetric),
                                     FormatStrings.FormatVeryShortDistanceDisplay(mainMaxes.Z, IsMetric));
@@ -1326,6 +1326,136 @@ namespace Orts.Simulation.RollingStocks
 
             if (TrackGaugeM <= 0) // Use gauge of route/sim settings if gauge wasn't defined
                 TrackGaugeM = Simulator.RouteTrackGaugeM;
+
+            // Auto size and/or auto center are used, but manual size/center aren't, report where we found these
+            if (!string.IsNullOrEmpty(AutoFileName) && AutoLineNumber != -1 && !(ManualSize && ManualCoG))
+            {
+                // Figure out what we want to say for size and centering
+                string sizeLine = "";
+                string offCenterNotice = "";
+                string CoGLine = "";
+
+                // No reason to specify size if it was already manually given
+                if (!ManualSize)
+                    sizeLine = "\tSize ( " + Math.Round(CarWidthM, 3).ToString("0.###") + "m " + Math.Round(CarHeightM, 3).ToString("0.###") + "m " + Math.Round(CarLengthM, 3).ToString("0.###") + "m )";
+
+                if (Math.Abs(InitialCentreOfGravityM.Z) >= 0.001f)
+                    offCenterNotice = "\tComment ( These don't have centered shape files. This fixes that. )";
+                else
+                    InitialCentreOfGravityM.Z = 0;
+
+                // No reason to specify CoG if it was already manually given
+                if (!ManualCoG)
+                {
+                    // I don't have CoG set up for locomotives, just use a value in meters there (for wagons, I have it configured in inches)
+                    if (this is MSTSLocomotive && InitialCentreOfGravityM.Y == 1.8f)
+                    {
+                        if (InitialCentreOfGravityM.Z != 0)
+                            CoGLine = "\tCentreOfGravity ( " + Math.Round(InitialCentreOfGravityM.X, 3).ToString("0.###") + "m " + Math.Round(Me.ToIn(InitialCentreOfGravityM.Y), 2).ToString("0.##") + "in " + InitialCentreOfGravityM.Z.ToString("0.#######") + "m )";
+                    }
+                    else
+                    {
+                        CoGLine = "\tCentreOfGravity ( " + Math.Round(InitialCentreOfGravityM.X, 3).ToString("0.###") + "m " + Math.Round(Me.ToIn(InitialCentreOfGravityM.Y), 2).ToString("0.##") + "in " + InitialCentreOfGravityM.Z.ToString("0.#######") + "m )";
+                    }
+                }
+
+                // We DO have new data to insert! Proceed with backing up the original file and making edits
+                if (!string.IsNullOrEmpty(sizeLine) || !string.IsNullOrEmpty(CoGLine))
+                {
+                    List<string> newFileLines = new List<string>();
+
+                    if (!string.IsNullOrEmpty(sizeLine))
+                    {
+                        newFileLines.Add(sizeLine);
+
+                        if (!string.IsNullOrEmpty(CoGLine))
+                            newFileLines.Add("\t");
+                    }
+
+                    if (!string.IsNullOrEmpty(CoGLine))
+                    {
+                        if (!string.IsNullOrEmpty(offCenterNotice))
+                            newFileLines.Add(offCenterNotice);
+
+                        newFileLines.Add(CoGLine);
+                    }
+
+                    Trace.WriteLine("\nLocated reference to an include file with auto size at " + Path.GetFullPath(AutoFileName) + " line number " + AutoLineNumber + ".");
+
+                    string line = File.ReadLines(AutoFileName).Skip(AutoLineNumber - 1).First();
+
+                    Trace.WriteLine("The include line is: " + line);
+
+                    if (!line.Contains("include") || !line.Contains(".inc") || !line.Contains("Wagon_Preset"))
+                    {
+                        Trace.WriteLine("This may be a false positive that doesn't need updating, skipping this file.");
+                    }
+                    else
+                    {
+                        // Edit the file to manually define size and centering as well (but keep a backup, just in case)
+                        string backupFileName = "ExpBackup_" + Path.GetFileName(AutoFileName);
+                        string backupFilePath = Path.GetDirectoryName(AutoFileName) + "\\" + backupFileName;
+
+                        // We should only make one backup, if the backup already exists that probably means something went wrong
+                        if (File.Exists(backupFilePath))
+                        {
+                            Trace.WriteLine("Backup file " + Path.GetFullPath(backupFilePath) + " already exists, skipping this file.");
+                        }
+                        else
+                        {
+                            try
+                            {
+                                File.Copy(AutoFileName, backupFilePath);
+
+                                Trace.WriteLine("Created backup file " + backupFilePath);
+
+                                try
+                                {
+                                    // We now have the information we need, time to rewrite the file with the information we want
+                                    List<string> originalFileLines = File.ReadAllLines(AutoFileName).ToList();
+
+                                    // Assemble the new file by adding the new lines to the original lines
+                                    int lineIndex = AutoLineNumber - 1;
+
+                                    // Slightly offset where we add the new lines in wagon files
+                                    if (AutoFileName.ToLowerInvariant().EndsWith(".wag"))
+                                    {
+                                        lineIndex -= 6;
+
+                                        if (lineIndex < 3)
+                                            lineIndex = 3;
+                                    }
+                                    else
+                                    {
+                                        // Add a new line for spacing purposes on non-wag files
+                                        newFileLines.Add("\t");
+                                    }
+
+                                    if (lineIndex >= 0 && lineIndex <= originalFileLines.Count)
+                                    {
+                                        originalFileLines.InsertRange(lineIndex, newFileLines);
+
+                                        File.WriteAllLines(AutoFileName, originalFileLines);
+                                        Trace.WriteLine("File " + Path.GetFullPath(AutoFileName) + " was updated!");
+                                    }
+                                    else
+                                    {
+                                        Trace.TraceError("Unable to update file " + Path.GetFullPath(AutoFileName) + ", line count " + lineIndex + " was out of bounds on this file.");
+                                    }
+                                }
+                                catch
+                                {
+                                    Trace.TraceError("It appears the file writing failed for some reason, consider restoring the backup to " + Path.GetFullPath(AutoFileName));
+                                }
+                            }
+                            catch
+                            {
+                                Trace.TraceError("Couldn't make backup file " + backupFilePath + " for some reason, cancelling.");
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Compute total mass of wagon including freight animations and variable loads like containers
@@ -1434,10 +1564,12 @@ namespace Orts.Simulation.RollingStocks
                     CarHeightM = stf.ReadFloat(STFReader.UNITS.Distance, null);
                     CarLengthM = stf.ReadFloat(STFReader.UNITS.Distance, null);
                     stf.SkipRestOfBlock();
+                    ManualSize = true;
                     break;
                 case "wagon(ortsautosize":
                     AutoSize = true;
                     AutoSizeOffsetM = stf.ReadVector3Block(STFReader.UNITS.Distance, Vector3.Zero);
+                    stf.FoundAutoSize = true;
                     break;
                 case "wagon(ortsshapebounds":
                     stf.MustMatch("(");
@@ -1488,6 +1620,8 @@ namespace Orts.Simulation.RollingStocks
                         }
 
                         stf.SkipRestOfBlock();
+
+                        ManualCoG = true;
                     }
                     else // User has entered a single value, only set the Y component to this value, leave other components unchanged
                     {
@@ -1496,7 +1630,7 @@ namespace Orts.Simulation.RollingStocks
                     break;
                 case "wagon(ortsshapenudge": InitialCentreOfGravityM.Z = stf.ReadFloatBlock(STFReader.UNITS.Distance, null); break;
                 case "wagon(ortsautocentre":
-                case "wagon(ortsautocenter": AutoCenter = stf.ReadBoolBlock(true); break;
+                case "wagon(ortsautocenter": AutoCenter = stf.ReadBoolBlock(true); stf.FoundAutoCenter = true; break;
                 case "wagon(ortsunbalancedsuperelevation": MaxUnbalancedSuperElevationM = stf.ReadFloatBlock(STFReader.UNITS.Distance, null); break;
                 case "wagon(ortsrigidwheelbase":
                     stf.MustMatch("(");
@@ -1858,6 +1992,13 @@ namespace Orts.Simulation.RollingStocks
                     if (MSTSBrakeSystem != null)
                         MSTSBrakeSystem.Parse(lowercasetoken, stf);
                     break;
+            }
+
+            // Keeping track of where we call for an include file that uses autosize/autocenter
+            if (!string.IsNullOrEmpty(stf.AutoFileName) && stf.AutoLineNumber != -1)
+            {
+                AutoFileName = stf.AutoFileName;
+                AutoLineNumber = stf.AutoLineNumber;
             }
         }
 

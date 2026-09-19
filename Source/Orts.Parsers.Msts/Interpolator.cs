@@ -69,8 +69,8 @@ namespace Orts.Parsers.Msts
             stf.MustMatch("(");
             while (!stf.EndOfBlock())
                 list.Add(stf.ReadFloat(STFReader.UNITS.Any, null));
-            if (list.Count % 2 == 1)
-                STFException.TraceWarning(stf, "Ignoring extra odd value in Interpolator list.");
+            //if (list.Count % 2 == 1)
+                //STFException.TraceWarning(stf, "Ignoring extra odd value in Interpolator list.");
             int n = list.Count/2;
             if (n < 2)
                 STFException.TraceWarning(stf, "Interpolator must have at least two value pairs.");

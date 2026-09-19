@@ -37,6 +37,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Event = Orts.Common.Event;
+using System.Linq;
 
 namespace Orts.Simulation
 {
@@ -1305,6 +1306,79 @@ namespace Orts.Simulation
             ConsistFile conFile = new ConsistFile(conFileName);
             CurveDurability = conFile.Train.TrainCfg.Durability;   // Finds curve durability of consist based upon the value in consist file
             train.TcsParametersFileName = conFile.Train.TrainCfg.TcsParametersFileName;
+
+            // experiment: Assemble a train (a train in code, won't actually be spawned into the world)
+            // with EVERY engine and wagon in it.
+            // NOTE: This should NOT make it to any actual builds! If I somehow let this reach a PR,
+            // please YELL AT ME!
+
+            // Make a new wagon list to hold our mega-train
+            List<Wagon> allWagons = new List<Wagon>();
+
+            // Iterate through every single folder in TRAINSET
+            var allTrainsets = Directory.EnumerateDirectories(BasePath + @"\trains\trainset\");
+
+            foreach (string trainset in allTrainsets)
+            {
+                // Get all wagon files (if any)
+                var allWagFiles = Directory.EnumerateFiles(trainset, "*.wag");
+
+                // Generate a wagon object for each wag file
+                if (allWagFiles.Any())
+                {
+                    foreach (string wagFile in allWagFiles)
+                        allWagons.Add(new Wagon(Path.GetFileName(trainset), Path.GetFileNameWithoutExtension(wagFile)));
+                }
+
+                // Get all engine files (if any)
+                var allEngFiles = Directory.EnumerateFiles(trainset, "*.eng");
+
+                // Generate a wagon object for each eng file
+                if (allEngFiles.Any())
+                {
+                    foreach (string engFile in allEngFiles)
+                        allWagons.Add(new Wagon(Path.GetFileName(trainset), Path.GetFileNameWithoutExtension(engFile), true));
+                }
+            }
+
+            // Assemble the imaginary mega-train
+            Train megaTrain = new Train(this);
+
+            foreach (Wagon wagon in allWagons)
+            {
+                string wagonFolder = BasePath + @"\trains\trainset\" + wagon.Folder;
+                string wagonFilePath = wagonFolder + @"\" + wagon.Name + ".wag";
+                if (wagon.IsEngine)
+                    wagonFilePath = Path.ChangeExtension(wagonFilePath, ".eng");
+                else if (wagon.IsEOT)
+                {
+                    wagonFolder = BasePath + @"\trains\orts_eot\" + wagon.Folder;
+                    wagonFilePath = wagonFolder + @"\" + wagon.Name + ".eot";
+                }
+
+                if (!File.Exists(wagonFilePath))
+                {
+                    Trace.TraceWarning($"Ignored missing {(wagon.IsEngine ? "engine" : "wagon")} {wagonFilePath} in mega consist");
+                    continue;
+                }
+
+                try
+                {
+                    TrainCar car = RollingStock.Load(this, megaTrain, wagonFilePath);
+                    car.Flipped = wagon.Flip;
+                    car.UiD = wagon.UiD;
+                    if (car is EOT) megaTrain.EOT = car as EOT;
+                    car.FreightAnimations?.Load(wagon.LoadDataList);
+
+                    megaTrain.Length += car.CarLengthM;
+                }
+                catch (Exception error)
+                {
+                    Trace.WriteLine(new FileLoadException(wagonFilePath, error));
+                }
+            }
+
+            Trace.WriteLine("Mega train has been generated!");
 
             // add wagons
             foreach (Wagon wagon in conFile.Train.TrainCfg.WagonList)

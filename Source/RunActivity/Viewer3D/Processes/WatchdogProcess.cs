@@ -1,4 +1,4 @@
-// COPYRIGHT 2014 by the Open Rails project.
+﻿// COPYRIGHT 2014 by the Open Rails project.
 // 
 // This file is part of Open Rails.
 // 
@@ -126,22 +126,24 @@ namespace Orts.Viewer3D.Processes
                     else if (!token.IsResponding)
                         hungTokens.Add(token);
 
-                if (hungTokens.Count > 0)
-                {
-                    // Report every hung thread as a fatal error.
-                    foreach (var token in hungTokens)
-                        Trace.WriteLine(new FatalException(new ThreadHangException(token.Thread, token.Stacks)));
+                // DISABLING WATCHDOG for my experiment here since it takes so long to load
+                // This should NOT make it to an actual build of OpenRails!!!!
+                //if (hungTokens.Count > 0)
+                //{
+                //    // Report every hung thread as a fatal error.
+                //    foreach (var token in hungTokens)
+                //        Trace.WriteLine(new FatalException(new ThreadHangException(token.Thread, token.Stacks)));
 
-                    // Report every waiting thread as a warning (it might be relevant).
-                    foreach (var token in waitTokens)
-                        Trace.WriteLine(new ThreadWaitException(token.Thread, token.Stacks));
+                //    // Report every waiting thread as a warning (it might be relevant).
+                //    foreach (var token in waitTokens)
+                //        Trace.WriteLine(new ThreadWaitException(token.Thread, token.Stacks));
 
-                    // Abandon ship!
-                    if (Debugger.IsAttached)
-                        Debugger.Break();
-                    else
-                        Environment.Exit(1);
-                }
+                //    // Abandon ship!
+                //    if (Debugger.IsAttached)
+                //        Debugger.Break();
+                //    else
+                //        Environment.Exit(1);
+                //}
             }
         }
     }
