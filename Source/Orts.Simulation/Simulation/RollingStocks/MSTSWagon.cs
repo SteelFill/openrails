@@ -841,6 +841,10 @@ namespace Orts.Simulation.RollingStocks
 
             CentreOfGravityM = InitialCentreOfGravityM;
 
+            // Override Z value of CoG with shape nudge, if defined
+            if (ShapeNudge != null)
+                CentreOfGravityM.Z = ShapeNudge.Value;
+
             if (FreightAnimations != null)
             {
                 foreach (var ortsFreightAnim in FreightAnimations.Animations)
@@ -1603,7 +1607,7 @@ namespace Orts.Simulation.RollingStocks
                         stf.SkipRestOfBlock();
                     }
                     break;
-                case "wagon(centerofgravity":
+                case "wagon(centerofgravity": // Alternate spelling
                 case "wagon(centreofgravity":
                     stf.MustMatch("(");
                     float initialValue = stf.ReadFloat(STFReader.UNITS.Distance, 0);
@@ -1628,7 +1632,7 @@ namespace Orts.Simulation.RollingStocks
                         InitialCentreOfGravityM.Y = initialValue;
                     }
                     break;
-                case "wagon(ortsshapenudge": InitialCentreOfGravityM.Z = stf.ReadFloatBlock(STFReader.UNITS.Distance, null); break;
+                case "wagon(ortsshapenudge": ShapeNudge = stf.ReadFloatBlock(STFReader.UNITS.Distance, null); break;
                 case "wagon(ortsautocentre":
                 case "wagon(ortsautocenter": AutoCenter = stf.ReadBoolBlock(true); stf.FoundAutoCenter = true; break;
                 case "wagon(ortsunbalancedsuperelevation": MaxUnbalancedSuperElevationM = stf.ReadFloatBlock(STFReader.UNITS.Distance, null); break;

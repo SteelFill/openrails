@@ -192,6 +192,7 @@ namespace Orts.Simulation.RollingStocks
         public bool ManualSize = false;
         public (Vector3 Mins, Vector3 Maxes) ShapeBoundingLimits;
         public bool AutoSize = false;       // Are the dimensions of this wagon to be calculated automatically from the shape file?
+        public bool AutoCenter = false;     // Should CentreOfGravityM.Z be set automatically to center the wagon?
         public Vector3 AutoSizeOffsetM;
         public string AutoFileName;
         public int AutoLineNumber = -1;
@@ -716,7 +717,7 @@ namespace Orts.Simulation.RollingStocks
         protected Vector3 InitialCentreOfGravityM = new Vector3(0, 1.8f, 0); // get centre of gravity - read in MSTSWagon
         public bool ManualCoG = false;
         public Vector3 CentreOfGravityM = new Vector3(0, 1.8f, 0); // get centre of gravity after adjusted for freight animation
-        protected bool AutoCenter = false; // Should CentreOfGravityM.Z be set automatically to center the wagon?
+        public float? ShapeNudge = null; // Front/back offset applied to shape
         public float SuperElevationM; // Super elevation on the curve
         protected float MaxUnbalancedSuperElevationM;  // Maximum comfortable cant deficiency, read from MSTS Wagon File
         public float SuperElevationAngleRad;
